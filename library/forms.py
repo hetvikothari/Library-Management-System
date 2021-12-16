@@ -45,5 +45,11 @@ class UpdateBook(FlaskForm):
     publication_date = DateField('Publication Date', validators=[DataRequired()])
     publisher = StringField('Publisher', validators=[DataRequired()])
     total_quantity = IntegerField('Total Quantity', validators=[DataRequired()])
-    available_quantity = IntegerField('Available Quantity', validators=[DataRequired()])
+    available_quantity = IntegerField('Available Quantity')
     submit = SubmitField('Update')
+
+class AddTransaction(FlaskForm):
+    member_email = StringField('Member Email', validators=[DataRequired()])
+    quantity = IntegerField('Quantity', validators=[DataRequired()])
+    return_date = DateField('Return Date', validators=[DataRequired()], format='%m/%d/%Y')
+    submit = SubmitField('Add Transaction')

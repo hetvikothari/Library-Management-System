@@ -15,7 +15,7 @@ class Book(db.Model):
     publication_date = db.Column(db.Date, nullable=False)
     publisher = db.Column(db.String, nullable=False)
     total_quantity = db.Column(db.Integer, default=30)
-    available_quantity = db.Column(db.Integer, default=30)
+    available_quantity = db.Column(db.Integer, default=30, nullable=True)
     transaction = db.relationship('Transaction', backref='book', lazy=True)
 
     def __repr__(self):

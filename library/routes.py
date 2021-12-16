@@ -1,7 +1,8 @@
 from library import app, db
 from library.models import Book, Member, Transaction
-from library.forms import AddMember, UpdateMember, AddBook, UpdateBook
+from library.forms import AddMember, UpdateMember, AddBook, UpdateBook, AddTransaction
 from flask import render_template,redirect,flash,url_for, request
+from datetime import date
 
 @app.route("/")
 @app.route("/home")
@@ -95,7 +96,8 @@ def update_book(book_id):
         book.text_reviews_count = form.text_reviews_count.data
         book.publication_date = form.publication_date.data
         book.publisher = form.publisher.data
-        book.average_rating = form.average_rating.data
+        book.total_quantity = form.total_quantity.data
+        book.available_quantity = form.available_quantity.data
         db.session.commit()
         flash('Book details have been updated!', 'success')
         return redirect(url_for('view_book'))
@@ -116,3 +118,29 @@ def update_book(book_id):
     return render_template('add_book.html', title='Update Book',
                            form=form, legend='Update Book')
 
+@app.route("/trasaction/", methods=['GET','POST'])
+def view_transaction():
+    book = Book.query.filter(Book.available_quantity>0).all()
+    print(book)
+    return render_template('transaction.html', books = book)
+
+@app.route("/book/<int:book_id>/issue", methods=['GET','POST'])
+def issue_book(book_id):
+    form = AddTransaction()
+    if form.validate_on_submit():
+        email = form.member_email.data
+        member = Member.query.filter_by(email=email).first()
+        if(member):
+            if(member.debt<=500):
+                transaction = Transaction(book_id=book_id, member_id = member.id, issue_date = date.today(), 
+                return_date = form.return_date, deadline = form.return_date, fees = 100, status ='issued')
+                db.session.add(transaction)
+                db.session.commit()
+                flash('Book issued successfully','success')
+            else:
+                flash('Cannot issue book to this member. His debt is greater than 500', 'danger')
+        else:
+            flash('No such member exsit. Please add member first','danger')
+        
+    return render_template('add_transaction.html', title='Add Trasanction',
+                           form=form, legend='Add Transaction')
