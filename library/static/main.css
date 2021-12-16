@@ -2,6 +2,7 @@ body {
     background: #fafafa;
     color: #333333;
     margin-top: 5rem;
+    overflow: scroll;
   }
   
   h1, h2, h3, h4, h5, h6 {
@@ -38,4 +39,9 @@ body {
       font-weight: bold;
   }
   
-  
+  .add_data{
+    width: 550px;
+    height: 450px;
+    margin: auto;
+    position: relative;
+   }
