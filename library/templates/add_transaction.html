@@ -6,7 +6,6 @@
         <th>Title</th>
         <th>Author</th>
         <th>Issue</th>
-        <th>Return</th>
     </tr>
     {% for book in books %}
     <tr>
@@ -14,10 +13,8 @@
         <td>{{ book.authors }}</td>
         <td><a href="{{ url_for('issue_book', book_id=book.id) }}"><button class="btn btn-secondary">Issue</button></a>
         </td>
-        <td><button type="button" class="btn btn-danger" data-toggle="modal"
-                data-target="#deleteModal-{{book.id}}">Return</button>
-        </td>
     </tr>
     {% endfor %}
 </table>
+
 {% endblock content %}

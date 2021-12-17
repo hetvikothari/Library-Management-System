@@ -27,7 +27,7 @@ class Member(db.Model):
     name = db.Column(db.String, nullable=False)
     email = db.Column(db.String, unique=True, nullable=False)
     debt = db.Column(db.Integer, default=0)
-    total_fees = db.Column(db.Integer, default=0, nullable=True)
+    total_fees = db.Column(db.Integer, default=0)
     transaction = db.relationship('Transaction', backref="member", lazy=True)
 
     def __repr__(self):

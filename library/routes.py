@@ -133,7 +133,7 @@ def update_book(book_id):
     return render_template('add_book.html', title='Update Book',
                            form=form, legend='Update Book')
 
-@app.route("/trasaction/view", methods=['GET','POST'])
+@app.route("/transaction/view", methods=['GET','POST'])
 def view_transaction():
     transactions = Transaction.query.all()
     for transaction in transactions:
@@ -143,9 +143,9 @@ def view_transaction():
         book = Book.query.get_or_404(book_id)
         transaction.member_name = member.name
         transaction.book_name = book.title
-    return render_template('view_transaction.html', transactions = transactions)
+    return render_template('view_transaction.html', transactions=transactions)
 
-@app.route("/trasaction/", methods=['GET','POST'])
+@app.route("/transaction/", methods=['GET','POST'])
 def add_transaction():
     book = Book.query.filter(Book.available_quantity > 0).all()
     print(book)
@@ -174,7 +174,7 @@ def issue_book(book_id):
                     db.session.add(transaction)
                     db.session.commit()                         
                     flash('Book issued successfully','success')
-                    return redirect(url_for('add_transaction'))
+                    return redirect(url_for('view_transaction'))
                 else:
                     flash('Quantity not available.', 'danger')
             else:
@@ -185,4 +185,26 @@ def issue_book(book_id):
             return redirect(url_for('home'))
     return render_template('issue_book.html', title='Add Trasanction',
                            form=form, legend='Add Transaction')
+
+@app.route("/book/<int:transaction_id>/return", methods=['GET','POST'])
+def return_book(transaction_id):
+    transactions = Transaction.query.get_or_404(transaction_id)
+    member_id = transactions.member_id
+    book_id = transactions.book_id
+    book = Book.query.get_or_404(book_id)
+    book.available_quantity = book.available_quantity + 1
+    paid = request.form.get('paid')
+    if(paid):
+        member = Member.query.get_or_404(member_id)
+        member.total_fees = member.total_fees + 100
+        member.debt = member.debt - 100
+    else:
+        member = Member.query.get_or_404(member_id)
+        member.debt = member.debt + 100
+    db.session.delete(transactions)
+    db.session.commit()  
+    flash('Book returned sucessfully','success')
+    book = Book.query.filter(Book.available_quantity > 0).all()
+    return render_template('add_transaction.html', books=book)  
+
 
