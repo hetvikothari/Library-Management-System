@@ -46,7 +46,3 @@ class UpdateBook(FlaskForm):
     available_quantity = IntegerField('Available Quantity')
     submit = SubmitField('Update')
 
-class AddTransaction(FlaskForm):
-    member_email = StringField('Member Email', validators=[DataRequired()])
-    quantity = IntegerField('Quantity', validators=[DataRequired()])
-    submit = SubmitField('Add Transaction')
