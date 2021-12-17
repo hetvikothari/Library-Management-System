@@ -16,6 +16,7 @@ class Book(db.Model):
     publisher = db.Column(db.String, nullable=False)
     total_quantity = db.Column(db.Integer, default=30)
     available_quantity = db.Column(db.Integer, default=30, nullable=True)
+    total_issue = db.Column(db.Integer, default=10, nullable=True)
     transaction = db.relationship('Transaction', backref='book', lazy=True)
 
     def __repr__(self):
@@ -23,9 +24,10 @@ class Book(db.Model):
 
 class Member(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String, unique=True, nullable=False)
+    name = db.Column(db.String, nullable=False)
     email = db.Column(db.String, unique=True, nullable=False)
     debt = db.Column(db.Integer, default=0)
+    total_fees = db.Column(db.Integer, default=0, nullable=True)
     transaction = db.relationship('Transaction', backref="member", lazy=True)
 
     def __repr__(self):

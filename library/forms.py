@@ -1,5 +1,5 @@
 from flask_wtf import FlaskForm
-from wtforms import StringField, SubmitField, IntegerField, DateField, FloatField
+from wtforms import StringField, SubmitField, IntegerField, DateField, FloatField, BooleanField
 from wtforms.validators import DataRequired, Email
 from library.models import Member,Book,Transaction
 
@@ -7,14 +7,12 @@ from library.models import Member,Book,Transaction
 class AddMember(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
-    phone = StringField('Phone', validators=[DataRequired()])
     submit = SubmitField('Add')
 
 class UpdateMember(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     email = StringField('Email', validators=[DataRequired(), Email()])
-    phone = StringField('Phone', validators=[DataRequired()])
-    submit = SubmitField('Update')
+    submit = SubmitField('Update Member')
 
 class AddBook(FlaskForm):
     title = StringField('Title', validators=[DataRequired()])
@@ -51,5 +49,4 @@ class UpdateBook(FlaskForm):
 class AddTransaction(FlaskForm):
     member_email = StringField('Member Email', validators=[DataRequired()])
     quantity = IntegerField('Quantity', validators=[DataRequired()])
-    return_date = DateField('Return Date', validators=[DataRequired()], format='%m/%d/%Y')
     submit = SubmitField('Add Transaction')

@@ -2,22 +2,31 @@ from library import app, db
 from library.models import Book, Member, Transaction
 from library.forms import AddMember, UpdateMember, AddBook, UpdateBook, AddTransaction
 from flask import render_template,redirect,flash,url_for, request
-from datetime import date
+from datetime import datetime, timedelta
+from sqlalchemy import or_
 
 @app.route("/")
 @app.route("/home")
 def home():
-    return render_template('home.html')
+    members = Member.query.order_by(Member.total_fees).all()
+    members = members[:10]
+    print(members)
+    books = Book.query.order_by(Book.total_issue).all()
+    books = books[:10]
+    print(books)
+    return render_template('home.html',members=members, books=books)
 
 @app.route("/member/add", methods=['GET', 'POST'])
 def add_member():
     form = AddMember()
-    if form.validate_on_submit():
+    if form.validate_on_submit() and request.method == "POST":
         member = Member(name=form.name.data, email=form.email.data, debt=0)
         db.session.add(member)
         db.session.commit()
         flash('Member has been added!', 'success')
         return redirect(url_for('view_member'))
+    else:
+        print(form.errors)
     return render_template('add_member.html', title='Add Member',
                            form=form, legend='Add Member')
 
@@ -30,7 +39,7 @@ def view_member():
 def update_member(member_id):
     member = Member.query.get_or_404(member_id)
     form = UpdateMember()
-    if form.validate_on_submit():
+    if form.validate_on_submit() and request.method == "POST":
         member.name = form.name.data
         member.email = form.email.data
         db.session.commit()
@@ -67,10 +76,16 @@ def add_book():
     return render_template('add_book.html', title='Add Book',
                            form=form, legend='Add Book')
 
-@app.route("/book/view", methods=['GET'])
+@app.route("/book/view", methods=['GET','POST'])
 def view_book():
     books = Book.query.all()
+    if request.method == "POST":
+       keyword = request.form.get("text")
+       books = Book.query.filter(or_(Book.title.ilike('%{}%'.format(keyword)), Book.authors.ilike('%{}%'.format(keyword)))).all() 
+       print(books)
+       return render_template("book.html", books=books)
     return render_template('book.html', books=books)
+
 
 @app.route("/book/<int:book_id>/delete", methods=['POST'])
 def delete_book(book_id):
@@ -118,29 +133,56 @@ def update_book(book_id):
     return render_template('add_book.html', title='Update Book',
                            form=form, legend='Update Book')
 
-@app.route("/trasaction/", methods=['GET','POST'])
+@app.route("/trasaction/view", methods=['GET','POST'])
 def view_transaction():
-    book = Book.query.filter(Book.available_quantity>0).all()
+    transactions = Transaction.query.all()
+    for transaction in transactions:
+        book_id = transaction.book_id
+        memeber_id = transaction.member_id
+        member = Member.query.get_or_404(memeber_id)
+        book = Book.query.get_or_404(book_id)
+        transaction.member_name = member.name
+        transaction.book_name = book.title
+    return render_template('view_transaction.html', transactions = transactions)
+
+@app.route("/trasaction/", methods=['GET','POST'])
+def add_transaction():
+    book = Book.query.filter(Book.available_quantity > 0).all()
     print(book)
-    return render_template('transaction.html', books = book)
+    return render_template('add_transaction.html', books = book)
+
 
 @app.route("/book/<int:book_id>/issue", methods=['GET','POST'])
 def issue_book(book_id):
+    book = Book.query.get_or_404(book_id)
     form = AddTransaction()
-    if form.validate_on_submit():
+    print(form)
+    if request.method == 'POST' :
         email = form.member_email.data
         member = Member.query.filter_by(email=email).first()
+        print(member)
         if(member):
             if(member.debt<=500):
-                transaction = Transaction(book_id=book_id, member_id = member.id, issue_date = date.today(), 
-                return_date = form.return_date, deadline = form.return_date, fees = 100, status ='issued')
-                db.session.add(transaction)
-                db.session.commit()
-                flash('Book issued successfully','success')
+                if(form.quantity.data <= book.available_quantity):
+                    print('adding transaction')
+                    return_date = datetime.today()+timedelta(days=30)
+                    transaction = Transaction(book_id=book_id, member_id = member.id, issue_date = datetime.today(), 
+                    return_date = return_date, deadline = return_date, fees = 100, status ='issued')
+                    book = Book.query.get_or_404(book_id)
+                    book.total_issue = book.total_issue + form.quantity.data
+                    book.available_quantity = book.available_quantity - form.quantity.data
+                    db.session.add(transaction)
+                    db.session.commit()                         
+                    flash('Book issued successfully','success')
+                    return redirect(url_for('add_transaction'))
+                else:
+                    flash('Quantity not available.', 'danger')
             else:
                 flash('Cannot issue book to this member. His debt is greater than 500', 'danger')
+                return redirect(url_for('home'))
         else:
             flash('No such member exsit. Please add member first','danger')
-        
-    return render_template('add_transaction.html', title='Add Trasanction',
+            return redirect(url_for('home'))
+    return render_template('issue_book.html', title='Add Trasanction',
                            form=form, legend='Add Transaction')
+

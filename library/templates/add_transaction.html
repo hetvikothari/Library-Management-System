@@ -1,35 +1,23 @@
 {% extends "layout.html" %}
 {% block content %}
-<div class="content-section">
-    <form method="POST" action="" class="add_data">
-        {{ form.hidden_tag() }}
-        <fieldset class="form-group">
-            <legend class="border-bottom mb-4">{{ legend }}</legend>
-            <div class="form-group">
-                {{ form.member_email.label(class="form-control-label") }}
-                {% if form.member_email.errors %}
-                {{ form.title(class="form-control form-control-lg is-invalid") }}
-                <div class="invalid-feedback">
-                    {% for error in form.member_email.errors %}
-                    <span>{{ error }}</span>
-                    {% endfor %}
-                </div>
-                {% else %}
-                {{ form.member_email(class="form-control form-control-lg") }}
-                {% endif %}
-            </div>
-            <div class="form-group">
-                {{ form.quantity.label(class="form-control-label") }}
-                {{ form.quantity(class="form-control form-control-lg") }}
-            </div>
-            <div class="form-group">
-                {{ form.return_date.label(class="form-control-label") }}
-                {{ form.return_date(class="form-control form-control-lg") }}
-            </div>
-        </fieldset>
-        <div class="form-group">
-            {{ form.submit(class="btn btn-info") }}
-        </div>
-    </form>
-</div>
+
+<table class="table table-striped table-bordered table-responsive-lg">
+    <tr>
+        <th>Title</th>
+        <th>Author</th>
+        <th>Issue</th>
+        <th>Return</th>
+    </tr>
+    {% for book in books %}
+    <tr>
+        <td>{{ book.title }}</td>
+        <td>{{ book.authors }}</td>
+        <td><a href="{{ url_for('issue_book', book_id=book.id) }}"><button class="btn btn-secondary">Issue</button></a>
+        </td>
+        <td><button type="button" class="btn btn-danger" data-toggle="modal"
+                data-target="#deleteModal-{{book.id}}">Return</button>
+        </td>
+    </tr>
+    {% endfor %}
+</table>
 {% endblock content %}
