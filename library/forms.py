@@ -46,3 +46,8 @@ class UpdateBook(FlaskForm):
     available_quantity = IntegerField('Available Quantity')
     submit = SubmitField('Update')
 
+class ImportBooks(FlaskForm):
+    number_of_books = IntegerField("Number of books to import",validators=[DataRequired()])
+    title = StringField("Book title")
+    authors = StringField("Book Authors")
+    submit = SubmitField('Import Book')

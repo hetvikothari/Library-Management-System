@@ -1,19 +1,19 @@
 from library import app, db
 from library.models import Book, Member, Transaction
-from library.forms import AddMember, UpdateMember, AddBook, UpdateBook
+from library.forms import AddMember, UpdateMember, AddBook, UpdateBook, ImportBooks
 from flask import render_template,redirect,flash,url_for, request
 from datetime import datetime, timedelta
 from sqlalchemy import or_
+import math
+import requests
 
 @app.route("/")
 @app.route("/home")
 def home():
     members = Member.query.order_by(Member.total_fees).all()
     members = members[:10]
-    print(members)
     books = Book.query.order_by(Book.total_issue).all()
     books = books[:10]
-    print(books)
     return render_template('home.html',members=members, books=books)
 
 @app.route("/member/add", methods=['GET', 'POST'])
@@ -82,7 +82,7 @@ def view_book():
     if request.method == "POST":
        keyword = request.form.get("text")
        books = Book.query.filter(or_(Book.title.ilike('%{}%'.format(keyword)), Book.authors.ilike('%{}%'.format(keyword)))).all() 
-       print(books)
+    #    print(books)
        return render_template("book.html", books=books)
     return render_template('book.html', books=books)
 
@@ -133,22 +133,21 @@ def update_book(book_id):
     return render_template('add_book.html', title='Update Book',
                            form=form, legend='Update Book')
 
-@app.route("/transaction/view", methods=['GET','POST'])
+@app.route("/transactions/view", methods=['GET','POST'])
 def view_transaction():
     transactions = Transaction.query.all()
     for transaction in transactions:
-        book_id = transaction.book_id
-        memeber_id = transaction.member_id
-        member = Member.query.get_or_404(memeber_id)
-        book = Book.query.get_or_404(book_id)
-        transaction.member_name = member.name
-        transaction.book_name = book.title
+        member= Member.query.filter_by(id=transaction.member_id).first()
+        if member is not None:
+            transaction.member_name = member.name
+        book = Book.query.filter_by(id=transaction.book_id).first()
+        if book is not None:
+            transaction.book_name = book.title
     return render_template('view_transaction.html', transactions=transactions)
 
 @app.route("/transaction/", methods=['GET','POST'])
 def add_transaction():
     book = Book.query.filter(Book.available_quantity > 0).all()
-    print(book)
     return render_template('add_transaction.html', books = book)
 
 
@@ -158,10 +157,8 @@ def issue_book(book_id):
     if request.method == 'POST' :
         email = request.form.get('email')
         member = Member.query.filter_by(email=email).first()
-        print(member)
         if(member):
             if(member.debt<=500):
-                print('adding transaction')
                 return_date = datetime.today()+timedelta(days=30)
                 transaction = Transaction(book_id=book_id, member_id = member.id, issue_date = datetime.today(), 
                 return_date = return_date, deadline = return_date, fees = 100, status ='issued')
@@ -174,12 +171,11 @@ def issue_book(book_id):
                 return redirect(url_for('view_transaction'))
             else:
                 flash('Cannot issue book to this member. His debt is greater than 500', 'danger')
-                return redirect(url_for('home'))
+                return redirect(url_for('view_transaction'))
         else:
             flash('No such member exsit. Please add member first','danger')
             return redirect(url_for('home'))
-    return render_template('issue_book.html', title='Add Trasanction',
-                           form=form, legend='Add Transaction')
+    return redirect(url_for('view_transaction'))
 
 @app.route("/book/<int:transaction_id>/return", methods=['GET','POST'])
 def return_book(transaction_id):
@@ -205,4 +201,51 @@ def return_book(transaction_id):
     book = Book.query.filter(Book.available_quantity > 0).all()
     return redirect(url_for('view_transaction'))
 
+@app.route("/book/import", methods=["GET", "POST"])
+def import_book():
+    form = ImportBooks()
+    if request.method == "POST":
+        pages = math.ceil(form.number_of_books.data / 20)
+        count = 0
 
+        for i in range(pages):
+            url = f"https://frappe.io/api/method/frappe-library/?page={i+1}"
+            payload = {"page": i + 1}
+            if form.title.data:
+                payload["title"] = form.title.data
+            if form.authors.data:
+                payload["authors"] = form.authors.data
+            response = requests.get(url, params=payload)
+
+            if response.status_code != 200:
+                break
+            response = response.json()
+            if not response["message"] or count == form.number_of_books.data:
+                break
+            for book in response["message"]:
+                if count == form.number_of_books.data:
+                    break
+
+                new_book = Book(
+                    title=book["title"],
+                    authors=book["authors"],
+                    average_rating=float(book["average_rating"]),
+                    language_code=book["language_code"],
+                    num_pages=book["  num_pages"],
+                    ratings_count=int(book["ratings_count"]),
+                    text_reviews_count=int(book["text_reviews_count"]),
+                    publication_date=datetime.strptime(book["publication_date"], "%m/%d/%Y"),
+                    publisher=book["publisher"],
+                    isbn=book["isbn"],
+                    isbn13=book["isbn13"],
+                    total_quantity=30,
+                    available_quantity=30,
+                    total_issue=0,
+                )
+                db.session.add(new_book)
+                count += 1
+
+        flash(f"Books successfully imported!", category="success")
+        db.session.commit()
+
+    return render_template("import_book.html", form=form)

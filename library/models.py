@@ -17,7 +17,7 @@ class Book(db.Model):
     total_quantity = db.Column(db.Integer, default=30)
     available_quantity = db.Column(db.Integer, default=30, nullable=True)
     total_issue = db.Column(db.Integer, default=10, nullable=True)
-    transaction = db.relationship('Transaction', backref='book', lazy=True)
+    transaction = db.relationship('Transaction', backref='book', lazy=True, passive_deletes=True)
 
     def __repr__(self):
         return f"Post('{self.title}', '{self.authors}')"
@@ -28,7 +28,7 @@ class Member(db.Model):
     email = db.Column(db.String, unique=True, nullable=False)
     debt = db.Column(db.Integer, default=0)
     total_fees = db.Column(db.Integer, default=0)
-    transaction = db.relationship('Transaction', backref="member", lazy=True)
+    transaction = db.relationship('Transaction', backref="member", lazy=True, passive_deletes=True)
 
     def __repr__(self):
         return f"User('{self.name}')"
@@ -39,8 +39,8 @@ class Member(db.Model):
 
 class Transaction(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    book_id = db.Column(db.Integer, db.ForeignKey("book.id", ondelete="SET NULL"))
-    member_id = db.Column(db.Integer, db.ForeignKey("member.id", ondelete="SET NULL"))
+    book_id = db.Column(db.Integer, db.ForeignKey("book.id", ondelete='CASCADE'),nullable = False)
+    member_id = db.Column(db.Integer, db.ForeignKey("member.id", ondelete='CASCADE'),nullable = False)
     issue_date = db.Column(db.Date, nullable=False)
     return_date = db.Column(db.Date)
     deadline = db.Column(db.Date, nullable=False)
