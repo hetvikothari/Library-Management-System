@@ -9,4 +9,4 @@ app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 db = SQLAlchemy(app)
 migrate = Migrate(app, db)
 
-from library import routes
+from library.routes import routes, book_routes, member_routes, transaction_routes 
